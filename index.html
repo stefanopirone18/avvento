@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Calendario dell'Avvento</title>
+  <style>
+    :root {
+      --bg: #121316;
+      --card-bg: #1c1e24;
+      --accent: #e63946;
+      --stem: #4a7c59;
+      --text: #f1faee;
+      --subtext: #a8dadc;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .container {
+      background: var(--card-bg);
+      border: 1px solid #2e323b;
+      border-radius: 28px;
+      padding: 24px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .badge {
+      background: rgba(230, 57, 70, 0.15);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      padding: 6px 14px;
+      border-radius: 99px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    /* Vaso e Pianta */
+    .garden {
+      width: 100%;
+      height: 250px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      margin: 10px 0 20px;
+      position: relative;
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .phrase-card {
+      background: #15171c;
+      border: 1px solid #2a2e38;
+      border-radius: 18px;
+      padding: 18px 16px;
+      width: 100%;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      line-height: 1.45;
+      color: #e2e8f0;
+      font-style: italic;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 6px;
+      background: #2a2e38;
+      border-radius: 99px;
+      margin-top: 20px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #4a7c59, #e63946);
+      width: 0%;
+      transition: width 1s ease-in-out;
+    }
+
+    /* Scelte Giorno 24 */
+    .finale-box {
+      display: none;
+      width: 100%;
+      margin-top: 16px;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn {
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.15s, opacity 0.2s;
+    }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-cogli {
+      background: #e63946;
+      color: white;
+    }
+    .btn-oppio {
+      background: #3a2e39;
+      color: #dfb2ff;
+      border: 1px solid #7b4f8d;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 10;
+    }
+    .modal-content {
+      background: #1c1e24;
+      border: 1px solid #3e4452;
+      border-radius: 24px;
+      padding: 24px;
+      max-width: 320px;
+      text-align: center;
+    }
+    .modal h3 { margin-bottom: 10px; color: #fff; }
+    .modal p { font-size: 0.95rem; color: #cbd5e1; line-height: 1.4; margin-bottom: 16px; }
+    .modal-close {
+      background: #334155;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="badge" id="dayBadge">Giorno --</div>
+
+    <div class="garden">
+      <svg viewBox="0 0 200 240">
+        <!-- Terreno -->
+        <path d="M 40 220 Q 100 210 160 220" stroke="#795548" stroke-width="8" stroke-linecap="round" fill="none" />
+        
+        <!-- Stelo dinamico -->
+        <path id="stem" d="M 100 215 Q 95 180 100 215" stroke="var(--stem)" stroke-width="4" stroke-linecap="round" fill="none"/>
+        
+        <!-- Foglie laterali -->
+        <g id="leaves" opacity="0">
+          <path d="M 98 180 Q 75 170 80 190 Q 95 185 98 180" fill="var(--stem)"/>
+          <path d="M 102 150 Q 125 140 120 160 Q 105 155 102 150" fill="var(--stem)"/>
+        </g>
+
+        <!-- Bocciolo / Fiore -->
+        <g id="flowerGroup" transform="translate(100, 215)">
+          <!-- Bocciolo verde iniziale -->
+          <ellipse id="bud" cx="0" cy="0" rx="0" ry="0" fill="#2d5a37" />
+          
+          <!-- Petali Papavero -->
+          <g id="petals" opacity="0">
+            <ellipse cx="-12" cy="-6" rx="15" ry="18" fill="#e63946" transform="rotate(-20)" />
+            <ellipse cx="12" cy="-6" rx="15" ry="18" fill="#e63946" transform="rotate(20)" />
+            <ellipse cx="0" cy="-14" rx="18" ry="14" fill="#d62828" />
+            <ellipse cx="0" cy="4" rx="16" ry="12" fill="#c1121f" />
+            <!-- Centro capsula -->
+            <circle cx="0" cy="-4" r="5" fill="#1b4332" />
+            <circle cx="0" cy="-4" r="3" fill="#081c15" />
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <div class="phrase-card" id="phraseText">Caricamento...</div>
+
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- Scelte finali per il Giorno 24 -->
+    <div class="finale-box" id="finaleBox">
+      <button class="btn btn-cogli" onclick="openModal('cogli')">Coglilo 🌸</button>
+      <button class="btn btn-oppio" onclick="openModal('oppio')">Trasformalo in oppio 🧪</button>
+    </div>
+  </div>
+
+  <!-- Modal Pop-up -->
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <h3 id="modalTitle">Scelta</h3>
+      <p id="modalDesc">Testo</p>
+      <button class="modal-close" onclick="closeModal()">Chiudi</button>
+    </div>
+  </div>
+
+  <script>
+    // 1. Database delle 24 frasi (personalizzale con i tuoi aneddoti e ricordi)
+    const frasi = {
+      1: "Tutto comincia con un seme invisibile sottoterra. Giorno 1 di 24.",
+      2: "Le radici cercano spazio nel buio prima di spuntare fuori.",
+      3: "Un piccolo punto verde buca la superficie.",
+      4: "Prenditi il tuo tempo: anche le cose selvatiche crescono con calma.",
+      5: "Una prima fogliolina, orientata verso la finestra.",
+      6: "Lo stelo si allunga un millimetro alla volta.",
+      7: "Prima settimana superata: comincia a prendere la sua forma.",
+      8: "Il verde diventa più scuro e lo stelo più saldo.",
+      9: "Cresce anche quando sembra fermo.",
+      10: "Due foglioline nuove spuntano alla base.",
+      11: "A metà strada: in cima comincia a piegarsi la testa.",
+      12: "Lo stelo oscilla ma non si spezza con nessun colpo d'aria.",
+      13: "Spunta il primo vero accenno di bocciolo peloso.",
+      14: "La capsula verde racchiude tutto quello che serve.",
+      15: "I dettagli più belli sono quelli ancora coperti.",
+      16: "Il bocciolo si solleva dritto verso l'alto.",
+      17: "Una fessura verde lascia intravedere un riflesso scarlatto.",
+      18: "Il calice si spacca: il rosso comincia a farsi spazio.",
+      19: "I primi petali spiegazzati si aprono all'aria.",
+      20: "Il rosso papavero copre tutto il resto.",
+      21: "Quattro giorni al traguardo: la corona di petali è tonda.",
+      22: "Un papavero solitario è più testardo di qualsiasi giardino finto.",
+      23: "Domani è la vigilia: il fiore è pronto per la sua scelta.",
+      24: "Il papavero ha completato il suo viaggio. E adesso che si fa?"
+    };
+
+    // 2. Lettura del parametro ?giorno= dall'URL
+    const params = new URLSearchParams(window.location.search);
+    let giorno = parseInt(params.get('giorno')) || 1;
+    if (giorno < 1) giorno = 1;
+    if (giorno > 24) giorno = 24;
+
+    // Aggiornamento testi
+    document.getElementById('dayBadge').innerText = `Giorno ${giorno} di 24`;
+    document.getElementById('phraseText').innerText = frasi[giorno] || "Buon cammino verso Natale.";
+    document.getElementById('progressBar').style.width = `${(giorno / 24) * 100}%`;
+
+    // 3. Meccanica di crescita grafica (SVG)
+    const stem = document.getElementById('stem');
+    const flowerGroup = document.getElementById('flowerGroup');
+    const leaves = document.getElementById('leaves');
+    const bud = document.getElementById('bud');
+    const petals = document.getElementById('petals');
+
+    // Calcolo altezza stelo da giorno 1 (y=215, altezza zero) a giorno 24 (y=80)
+    const topY = 215 - (giorno / 24) * 135;
+    const curveX = 100 + Math.sin(giorno / 2) * 15;
+    stem.setAttribute('d', `M 100 215 Q ${curveX} ${(topY + 215)/2} 100 ${topY}`);
+    flowerGroup.setAttribute('transform', `translate(100, ${topY})`);
+
+    // Comparsa foglie dopo il giorno 5
+    if (giorno >= 5) {
+      leaves.setAttribute('opacity', Math.min(1, (giorno - 4) / 6));
+    }
+
+    // Bocciolo dal giorno 12
+    if (giorno >= 12 && giorno < 18) {
+      const budSize = (giorno - 11) * 1.5;
+      bud.setAttribute('rx', budSize);
+      bud.setAttribute('ry', budSize * 1.3);
+    }
+
+    // Fioritura petali rossi dal giorno 18 in poi
+    if (giorno >= 18) {
+      bud.setAttribute('opacity', 0);
+      petals.setAttribute('opacity', 1);
+      const scale = 0.4 + ((giorno - 17) / 7) * 0.6;
+      petals.setAttribute('transform', `scale(${scale})`);
+    }
+
+    // 4. Mostra le scelte il giorno 24
+    if (giorno === 24) {
+      document.getElementById('finaleBox').style.display = 'flex';
+    }
+
+    // 5. Gestione modale finale
+    function openModal(tipo) {
+      const modal = document.getElementById('modal');
+      const title = document.getElementById('modalTitle');
+      const desc = document.getElementById('modalDesc');
+
+      if (tipo === 'cogli') {
+        title.innerText = "Hai colto il papavero 🌸";
+        desc.innerText = "Lo metti tra le pagine del libro più pesante che hai per conservarlo per sempre. Un fiore fragile che ha attraversato tutto dicembre.";
+      } else {
+        title.innerText = "Laboratorio Alchemico 🧪";
+        desc.innerText = "Incidi la capsula, raccogli il lattice e prepari una boccetta di oppio nero. Effetti collaterali: ne rimarrai inebriata.";
+      }
+      modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('modal').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
